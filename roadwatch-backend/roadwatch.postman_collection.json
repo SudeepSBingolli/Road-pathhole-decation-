@@ -1,0 +1,653 @@
+{
+  "info": {
+    "_postman_id": "roadwatch-backend-api-collection",
+    "name": "RoadWatch Backend API Collection",
+    "description": "Comprehensive Postman collection for testing the RoadWatch pothole reporting and repair-tracking platform.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5000",
+      "type": "string"
+    },
+    {
+      "key": "adminToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "maintToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "citizenToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "activeReportId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "activeRepairId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "activeTeamId",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "01. Auth",
+      "item": [
+        {
+          "name": "Register Citizen",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Test Citizen\",\n  \"email\": \"test.citizen@example.com\",\n  \"password\": \"CitizenPassword123!\",\n  \"phone\": \"+1-555-0199\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "register"]
+            }
+          }
+        },
+        {
+          "name": "Login as Admin",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.data && res.data.token) {",
+                  "  pm.collectionVariables.set('adminToken', res.data.token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@roadwatch.org\",\n  \"password\": \"AdminPassword123!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "Login as Maintenance",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.data && res.data.token) {",
+                  "  pm.collectionVariables.set('maintToken', res.data.token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"john.maint@roadwatch.org\",\n  \"password\": \"MaintPassword123!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "Login as Citizen",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.data && res.data.token) {",
+                  "  pm.collectionVariables.set('citizenToken', res.data.token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"alice.citizen@gmail.com\",\n  \"password\": \"CitizenPassword123!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "Get Current Profile (Me)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "me"]
+            }
+          }
+        },
+        {
+          "name": "Admin: Create Maintenance Account",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Marcus Vance\",\n  \"email\": \"marcus.maint@roadwatch.org\",\n  \"password\": \"MaintPassword123!\",\n  \"phone\": \"+1-512-555-0145\",\n  \"teamId\": \"{{activeTeamId}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/maintenance",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "maintenance"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "02. Teams",
+      "item": [
+        {
+          "name": "Admin: Create Team",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.data && res.data._id) {",
+                  "  pm.collectionVariables.set('activeTeamId', res.data._id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"South Highway Patrol\",\n  \"area\": \"South District\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/teams",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "teams"]
+            }
+          }
+        },
+        {
+          "name": "List Teams",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/teams",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "teams"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "03. Reports",
+      "item": [
+        {
+          "name": "Citizen: Submit New Report (Multipart)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.data && res.data.report && res.data.report._id) {",
+                  "  pm.collectionVariables.set('activeReportId', res.data.report._id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{citizenToken}}" }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "description", "value": "Dangerous deep pothole on South 1st St", "type": "text" },
+                { "key": "address", "value": "1200 S 1st St, Austin, TX", "type": "text" },
+                { "key": "area", "value": "Downtown", "type": "text" },
+                { "key": "latitude", "value": "30.2550", "type": "text" },
+                { "key": "longitude", "value": "-97.7530", "type": "text" }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/reports",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "reports"]
+            }
+          }
+        },
+        {
+          "name": "Citizen: Submit 25m Duplicate Report (Proximity Deduplication)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{citizenToken}}" }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "description", "value": "Another car damaged here at South 1st St!", "type": "text" },
+                { "key": "address", "value": "1202 S 1st St, Austin, TX", "type": "text" },
+                { "key": "area", "value": "Downtown", "type": "text" },
+                { "key": "latitude", "value": "30.25505", "type": "text" },
+                { "key": "longitude", "value": "-97.75302", "type": "text" }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/reports",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "reports"]
+            }
+          }
+        },
+        {
+          "name": "Get Nearby Reports ($geoNear)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/reports/nearby?lat=30.2672&lng=-97.7431&radius=5000",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "reports", "nearby"],
+              "query": [
+                { "key": "lat", "value": "30.2672" },
+                { "key": "lng", "value": "-97.7431" },
+                { "key": "radius", "value": "5000" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "List Reports (Filtered & Paginated)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/reports?page=1&limit=10&area=Downtown",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "reports"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "10" },
+                { "key": "area", "value": "Downtown" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Report By ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/reports/{{activeReportId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "reports", "{{activeReportId}}"]
+            }
+          }
+        },
+        {
+          "name": "Admin: Set Priority",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"priority\": \"critical\",\n  \"note\": \"Manually escalated priority due to emergency school bus route.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/reports/{{activeReportId}}/priority",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "reports", "{{activeReportId}}", "priority"]
+            }
+          }
+        },
+        {
+          "name": "Admin: Assign Team with DueDate",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"teamId\": \"{{activeTeamId}}\",\n  \"dueDate\": \"2026-11-20T18:00:00.000Z\",\n  \"note\": \"Dispatched for swift road resurfacing.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/reports/{{activeReportId}}/assign",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "reports", "{{activeReportId}}", "assign"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "04. Maintenance Tasks",
+      "item": [
+        {
+          "name": "Maintenance: Get My Team's Tasks",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{maintToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/tasks",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "tasks"]
+            }
+          }
+        },
+        {
+          "name": "Maintenance: Start Task (in-progress)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{maintToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"in-progress\",\n  \"note\": \"Crew arrived on site with safety cones and equipment.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/tasks/{{activeReportId}}/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "tasks", "{{activeReportId}}", "status"]
+            }
+          }
+        },
+        {
+          "name": "Maintenance: Submit Repair (repair-completed)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.data && res.data.repair && res.data.repair._id) {",
+                  "  pm.collectionVariables.set('activeRepairId', res.data.repair._id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{maintToken}}" }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "notes", "value": "Excavated, treated with tack coat, filled with asphalt mix and rolled flat.", "type": "text" },
+                { "key": "timeTakenHours", "value": "2.5", "type": "text" },
+                { "key": "materialsUsed", "value": "[\"Hot Asphalt (60kg)\", \"Tack Coat Emulsion (5L)\"]", "type": "text" }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/tasks/{{activeReportId}}/repair",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "tasks", "{{activeReportId}}", "repair"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "05. Repairs & Verification",
+      "item": [
+        {
+          "name": "Admin: Verify Repair (Approve)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"approved\",\n  \"remarks\": \"Work verified on-site. Road surface level and compaction meets standard.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/repairs/{{activeRepairId}}/verify",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "repairs", "{{activeRepairId}}", "verify"]
+            }
+          }
+        },
+        {
+          "name": "Admin: Verify Repair (Reject for Rework)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"rejected\",\n  \"remarks\": \"Perimeter edges not sealed properly. Re-apply edge seal.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/repairs/{{activeRepairId}}/verify",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "repairs", "{{activeRepairId}}", "verify"]
+            }
+          }
+        },
+        {
+          "name": "Get Repair Details",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/repairs/{{activeRepairId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "repairs", "{{activeRepairId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "06. Analytics (Aggregation Pipelines)",
+      "item": [
+        {
+          "name": "Analytics Summary (Status & Priority)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/analytics/summary",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "analytics", "summary"]
+            }
+          }
+        },
+        {
+          "name": "Monthly Trends",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/analytics/trends?months=12",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "analytics", "trends"],
+              "query": [
+                { "key": "months", "value": "12" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Average Repair Time",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/analytics/avg-repair-time",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "analytics", "avg-repair-time"]
+            }
+          }
+        },
+        {
+          "name": "Per-Team Performance & Rework Rate",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/analytics/team-performance",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "analytics", "team-performance"]
+            }
+          }
+        },
+        {
+          "name": "Pothole Hotspots (Area & Grid Clusters)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/analytics/hotspots",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "analytics", "hotspots"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "07. Notifications",
+      "item": [
+        {
+          "name": "Get My Notifications",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{citizenToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/notifications?page=1&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "notifications"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "20" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Mark All As Read",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{citizenToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/notifications/read-all/read",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "notifications", "read-all", "read"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
+

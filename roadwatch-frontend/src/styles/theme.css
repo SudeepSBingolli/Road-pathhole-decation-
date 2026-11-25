@@ -1,0 +1,41 @@
+/* Design Tokens */
+:root {
+  /* Primary palette (Compines‑style) */
+  --color-primary: #0A84FF;   /* bright accent */
+  --color-primary-foreground: #ffffff;
+  --color-background: #f9fafb; /* light page bg */
+  --color-surface: #ffffff;   /* cards */
+  --color-surface-2: #f3f4f6;
+  --color-border: #e5e7eb;
+  --color-text-primary: #111827;
+  --color-text-secondary: #4b5563;
+  --color-muted: #9ca3af;
+
+  /* GPS‑Command Center dark palette (used for sidebar) */
+  --gps-bg: #030c17;
+  --gps-sidebar: #08192b;
+  --gps-panel: #102944;
+  --gps-card: #0d2138;
+  --gps-cyan: #73d4ff;
+  --gps-blue: #3998d8;
+  --gps-green: #35d6a0;
+  --gps-orange: #ffb45e;
+  --gps-red: #ff6474;
+  --gps-text: #f4f8fc;
+  --gps-muted: #91a8bf;
+  --gps-border: rgba(130,190,230,0.18);
+}
+
+/* Utility classes that map Tailwind utilities to our CSS variables */
+.bg-primary { background-color: var(--color-primary); }
+.bg-gps-bg { background-color: var(--gps-bg); }
+.text-primary { color: var(--color-primary); }
+.border-primary { border-color: var(--color-primary); }
+.bg-gps-sidebar { background-color: var(--gps-sidebar); }
+.bg-gps-panel { background-color: var(--gps-panel); }
+.bg-gps-card { background-color: var(--gps-card); }
+.text-gps { color: var(--gps-text); }
+.border-gps { border-color: var(--gps-border); }
+.rounded-md { border-radius: var(--radius-md, 0.5rem); }
+.shadow-sm { box-shadow: var(--shadow-sm, 0 1px 2px rgba(0,0,0,.05)); }
+.transition-all { transition: all var(--duration-300, 300ms) var(--ease-out, cubic-bezier(.25,.8,.25,1)); }
