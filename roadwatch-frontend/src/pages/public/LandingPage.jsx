@@ -216,71 +216,28 @@ export const LandingPage = () => {
         {/* ========================================================= */}
         {/* 3. ROLLING GREEN HILLS & NATURAL SCENIC LANDSCAPE         */}
         {/* ========================================================= */}
-        <div className="absolute inset-x-0 bottom-0 h-96 sm:h-[460px] pointer-events-none z-10 overflow-hidden">
+        <div className="absolute inset-x-0 bottom-0 h-96 sm:h-[500px] pointer-events-none z-10 overflow-hidden">
           
-          {/* Subtle Warm Sunrise Ambient Sunbeam */}
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[700px] h-[350px] bg-gradient-to-b from-[#F5E6CC]/40 via-[#F3DEB8]/20 to-transparent rounded-full blur-3xl" />
-
-          {/* Layered Rolling Hills Vector Artwork (SaaSCraft Aesthetic) */}
-          <svg
-            viewBox="0 0 1440 420"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-            className="absolute bottom-0 w-full h-full object-cover"
-            preserveAspectRatio="none"
-          >
-            <defs>
-              <linearGradient id="hillBack" x1="0%" y1="0%" x2="0%" y2="100%">
-                <stop offset="0%" stopColor="#87B47C" />
-                <stop offset="100%" stopColor="#4A7E46" />
-              </linearGradient>
-              <linearGradient id="hillMid" x1="0%" y1="0%" x2="0%" y2="100%">
-                <stop offset="0%" stopColor="#4B8148" />
-                <stop offset="100%" stopColor="#2D5A30" />
-              </linearGradient>
-              <linearGradient id="hillFront" x1="0%" y1="0%" x2="0%" y2="100%">
-                <stop offset="0%" stopColor="#2B562F" />
-                <stop offset="100%" stopColor="#17351F" />
-              </linearGradient>
-              <linearGradient id="sunHaze" x1="50%" y1="0%" x2="50%" y2="100%">
-                <stop offset="0%" stopColor="#FFF8E8" stopOpacity="0.4" />
-                <stop offset="100%" stopColor="#17351F" stopOpacity="0" />
-              </linearGradient>
-            </defs>
-
-            {/* Back Distant Rolling Ridge */}
-            <path
-              d="M0 240 Q 280 160, 560 210 T 1120 180 Q 1300 170, 1440 220 L 1440 420 L 0 420 Z"
-              fill="url(#hillBack)"
-              opacity="0.85"
+          {/* Realistic Rolling Green Hills Photography with Natural Atmosphere */}
+          <div className="absolute inset-0">
+            <img
+              src="https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=2000&auto=format&fit=crop&q=85"
+              alt="Rolling Green Hills Landscape"
+              className="w-full h-full object-cover object-bottom"
             />
+            
+            {/* Top Atmospheric Gradient fading smoothly from warm cream (#F8F6EF) into landscape */}
+            <div className="absolute inset-0 bg-gradient-to-b from-[#F8F6EF] via-[#F8F6EF]/70 to-transparent" />
+            
+            {/* Soft Sunrise Ambient Glow in the Sky Center */}
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[760px] h-[320px] bg-gradient-to-b from-[#FFF5E0]/60 via-[#FCE3B8]/30 to-transparent rounded-full blur-3xl" />
+            
+            {/* Deep Green Foreground Gradient behind the Floating Dashboard */}
+            <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-[#122A19]/80 via-[#17351F]/40 to-transparent" />
+          </div>
 
-            {/* Side Forest Canopy Left */}
-            <ellipse cx="60" cy="270" rx="90" ry="110" fill="#386A39" opacity="0.9" />
-            <ellipse cx="140" cy="290" rx="80" ry="90" fill="#2E5C31" />
-            <ellipse cx="220" cy="310" rx="70" ry="70" fill="#254F28" />
-
-            {/* Side Forest Canopy Right */}
-            <ellipse cx="1380" cy="260" rx="90" ry="110" fill="#386A39" opacity="0.9" />
-            <ellipse cx="1300" cy="280" rx="80" ry="90" fill="#2E5C31" />
-            <ellipse cx="1220" cy="300" rx="70" ry="70" fill="#254F28" />
-
-            {/* Mid Scenic Green Ridge */}
-            <path
-              d="M0 290 Q 360 210, 720 270 T 1440 250 L 1440 420 L 0 420 Z"
-              fill="url(#hillMid)"
-              opacity="0.95"
-            />
-
-            {/* Foreground Deep Forest Ridge */}
-            <path
-              d="M0 330 Q 420 260, 840 340 T 1440 310 L 1440 420 L 0 420 Z"
-              fill="url(#hillFront)"
-            />
-
-            {/* Atmospheric Mist & Sunlit Shimmer */}
-            <rect width="1440" height="420" fill="url(#sunHaze)" pointerEvents="none" />
-          </svg>
+          {/* Organic Scenic Silhouette Edge for seamless depth */}
+          <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-[#F8F6EF] to-transparent z-10" />
         </div>
       </section>
 
