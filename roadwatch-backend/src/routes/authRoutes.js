@@ -16,20 +16,20 @@ const router = express.Router();
 // Validation Rules
 const registerRules = [
   body('name').trim().notEmpty().withMessage('Name is required'),
-  body('email').isEmail().normalizeEmail().withMessage('Valid email is required'),
+  body('email').isEmail().normalizeEmail({ gmail_remove_dots: false }).withMessage('Valid email is required'),
   body('password')
     .isLength({ min: 6 })
     .withMessage('Password must be at least 6 characters long')
 ];
 
 const loginRules = [
-  body('email').isEmail().normalizeEmail().withMessage('Valid email is required'),
+  body('email').isEmail().normalizeEmail({ gmail_remove_dots: false }).withMessage('Valid email is required'),
   body('password').notEmpty().withMessage('Password is required')
 ];
 
 const maintenanceRules = [
   body('name').trim().notEmpty().withMessage('Name is required'),
-  body('email').isEmail().normalizeEmail().withMessage('Valid email is required'),
+  body('email').isEmail().normalizeEmail({ gmail_remove_dots: false }).withMessage('Valid email is required'),
   body('password')
     .isLength({ min: 6 })
     .withMessage('Password must be at least 6 characters long'),
@@ -38,7 +38,7 @@ const maintenanceRules = [
 
 const adminRules = [
   body('name').trim().notEmpty().withMessage('Name is required'),
-  body('email').isEmail().normalizeEmail().withMessage('Valid email is required'),
+  body('email').isEmail().normalizeEmail({ gmail_remove_dots: false }).withMessage('Valid email is required'),
   body('password')
     .isLength({ min: 6 })
     .withMessage('Password must be at least 6 characters long')

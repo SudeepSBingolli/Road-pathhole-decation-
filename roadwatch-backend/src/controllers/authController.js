@@ -60,7 +60,7 @@ const login = async (req, res, next) => {
     const { email, password } = req.body;
 
     // Find user and explicitly select password field
-    const user = await User.findOne({ email: email.toLowerCase() })
+    const user = await User.findOne({ email: email ? email.toLowerCase().trim() : '' })
       .select('+password')
       .populate('team', 'name area');
 
