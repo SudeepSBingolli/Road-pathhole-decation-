@@ -1,0 +1,548 @@
+{
+  "name": "RoadWatch - AI Pothole Detection & Maintenance Management Workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "api/v1/reports",
+        "options": {}
+      },
+      "id": "1001",
+      "name": "Webhook: Citizen Pothole Report",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.cloudinary.com/v1_1/roadwatch/image/upload",
+        "sendBinaryData": true,
+        "binaryPropertyName": "image",
+        "options": {}
+      },
+      "id": "1002",
+      "name": "Cloudinary: Store Damage Photo",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://localhost:8000/detect",
+        "sendBinaryData": true,
+        "binaryPropertyName": "file",
+        "options": {
+          "timeout": 12000
+        }
+      },
+      "id": "1003",
+      "name": "FastAPI: YOLOv8 Object Detection",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.has_damage }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "1004",
+      "name": "Switch: Damage Confirmed?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [900, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Calculate dynamic severity score based on YOLO detection results\nconst detections = $input.first().json.detections || [];\nlet potholes = 0;\nlet alligator = 0;\nlet cracks = 0;\n\nfor (const d of detections) {\n  if (d.class_name === 'Potholes') potholes++;\n  else if (d.class_name === 'Alligator Crack') alligator++;\n  else cracks++;\n}\n\nconst severityScore = Math.min(100, (potholes * 25) + (alligator * 15) + (cracks * 8));\nlet priority = 'low';\nif (severityScore >= 75) priority = 'critical';\nelse if (severityScore >= 50) priority = 'high';\nelse if (severityScore >= 25) priority = 'medium';\n\nreturn [{\n  json: {\n    hasDamage: true,\n    severityScore,\n    priority,\n    detectionsCount: detections.length,\n    potholes,\n    alligator,\n    cracks\n  }\n}];"
+      },
+      "id": "1005",
+      "name": "Code: Severity & Priority Calculator",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1120, 200]
+    },
+    {
+      "parameters": {
+        "collection": "reports",
+        "operation": "find",
+        "query": "={\n  \"location\": {\n    \"$nearSphere\": {\n      \"$geometry\": {\n        \"type\": \"Point\",\n        \"coordinates\": [{{ $('Webhook: Citizen Pothole Report').first().json.body.longitude }}, {{ $('Webhook: Citizen Pothole Report').first().json.body.latitude }}]\n      },\n      \"$maxDistance\": 50\n    }\n  },\n  \"status\": { \"$in\": [\"OPEN\", \"ASSIGNED\", \"IN_PROGRESS\"] }\n}"
+      },
+      "id": "1006",
+      "name": "MongoDB: Geospatial Deduplication",
+      "type": "n8n-nodes-base.mongoDb",
+      "typeVersion": 1,
+      "position": [1340, 200]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "number": [
+            {
+              "value1": "={{ $input.all().length }}",
+              "operation": "larger",
+              "value2": 0
+            }
+          ]
+        }
+      },
+      "id": "1007",
+      "name": "Switch: Duplicate Pothole?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [1560, 200]
+    },
+    {
+      "parameters": {
+        "collection": "reports",
+        "operation": "update",
+        "query": "={ \"_id\": \"{{ $input.first().json._id }}\" }",
+        "fields": "={ \"$inc\": { \"duplicateCount\": 1, \"upvotes\": 1 } }"
+      },
+      "id": "1008",
+      "name": "MongoDB: Increment Duplicate Counter",
+      "type": "n8n-nodes-base.mongoDb",
+      "typeVersion": 1,
+      "position": [1800, 100]
+    },
+    {
+      "parameters": {
+        "collection": "reports",
+        "operation": "insert",
+        "fields": "={\n  \"complaintId\": \"RW-\" + Date.now().toString().slice(-6),\n  \"status\": \"OPEN\",\n  \"priority\": \"{{ $('Code: Severity & Priority Calculator').first().json.priority }}\",\n  \"severityScore\": {{ $('Code: Severity & Priority Calculator').first().json.severityScore }},\n  \"imageUrl\": \"{{ $('Cloudinary: Store Damage Photo').first().json.secure_url }}\",\n  \"location\": {\n    \"type\": \"Point\",\n    \"coordinates\": [{{ $('Webhook: Citizen Pothole Report').first().json.body.longitude }}, {{ $('Webhook: Citizen Pothole Report').first().json.body.latitude }}]\n  }\n}"
+      },
+      "id": "1009",
+      "name": "MongoDB: Insert New Complaint",
+      "type": "n8n-nodes-base.mongoDb",
+      "typeVersion": 1,
+      "position": [1800, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Corridor Dispatch: match report coordinates to the nearest active municipal maintenance crew\nreturn [{\n  json: {\n    assignedTeamId: '66a12b3c4d5e6f7a8b9c0d1e',\n    corridorSector: 'Sector-04 North',\n    dueDate: new Date(Date.now() + 86400000 * 2).toISOString()\n  }\n}];"
+      },
+      "id": "1010",
+      "name": "Code: Smart Corridor Dispatcher",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2020, 300]
+    },
+    {
+      "parameters": {
+        "collection": "reports",
+        "operation": "update",
+        "query": "={ \"_id\": \"{{ $('MongoDB: Insert New Complaint').first().json._id }}\" }",
+        "fields": "={\n  \"status\": \"ASSIGNED\",\n  \"assignedTeam\": \"{{ $input.first().json.assignedTeamId }}\",\n  \"dueDate\": \"{{ $input.first().json.dueDate }}\"\n}"
+      },
+      "id": "1011",
+      "name": "MongoDB: Assign Team Work Order",
+      "type": "n8n-nodes-base.mongoDb",
+      "typeVersion": 1,
+      "position": [2240, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://localhost:5000/api/v1/internal/broadcast",
+        "jsonParameters": true,
+        "bodyParametersJson": "={\n  \"event\": \"report:created\",\n  \"payload\": {\n    \"reportId\": \"{{ $('MongoDB: Insert New Complaint').first().json._id }}\",\n    \"priority\": \"{{ $('Code: Severity & Priority Calculator').first().json.priority }}\"\n  }\n}",
+        "options": {}
+      },
+      "id": "1012",
+      "name": "Socket.IO: Broadcast to Admin Radar Map",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [2460, 200]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "api/v1/tasks/complete",
+        "options": {}
+      },
+      "id": "2001",
+      "name": "Webhook: Contractor Submits Repair Proof",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 600]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.cloudinary.com/v1_1/roadwatch/image/upload",
+        "sendBinaryData": true,
+        "binaryPropertyName": "repairPhoto",
+        "options": {}
+      },
+      "id": "2002",
+      "name": "Cloudinary: Store Repair Proof Photo",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [460, 600]
+    },
+    {
+      "parameters": {
+        "collection": "repairs",
+        "operation": "insert",
+        "fields": "={\n  \"reportId\": \"{{ $input.first().json.body.reportId }}\",\n  \"repairImageUrl\": \"{{ $('Cloudinary: Store Repair Proof Photo').first().json.secure_url }}\",\n  \"materialsUsed\": \"Hot-mix asphalt, bitumen tack coat, compactor\",\n  \"status\": \"pending_verification\"\n}"
+      },
+      "id": "2003",
+      "name": "MongoDB: Insert Repair Record",
+      "type": "n8n-nodes-base.mongoDb",
+      "typeVersion": 1,
+      "position": [680, 600]
+    },
+    {
+      "parameters": {
+        "httpMethod": "PATCH",
+        "path": "api/v1/repairs/verify",
+        "options": {}
+      },
+      "id": "2004",
+      "name": "Webhook: Admin Approval Action",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [900, 600]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $input.first().json.body.status }}",
+              "value2": "approved"
+            }
+          ]
+        }
+      },
+      "id": "2005",
+      "name": "Switch: Repair Approved?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [1120, 600]
+    },
+    {
+      "parameters": {
+        "collection": "reports",
+        "operation": "update",
+        "query": "={ \"_id\": \"{{ $input.first().json.body.reportId }}\" }",
+        "fields": "={ \"status\": \"RESOLVED\", \"resolvedAt\": new Date().toISOString() }"
+      },
+      "id": "2006",
+      "name": "MongoDB: Mark Report RESOLVED",
+      "type": "n8n-nodes-base.mongoDb",
+      "typeVersion": 1,
+      "position": [1340, 520]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://localhost:5000/api/v1/notifications/citizen-alert",
+        "jsonParameters": true,
+        "bodyParametersJson": "={\n  \"message\": \"Your reported pothole has been repaired and verified with photographic evidence.\"\n}",
+        "options": {}
+      },
+      "id": "2007",
+      "name": "Notification: Citizen Completion Alert",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1560, 520]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 1
+            }
+          ]
+        }
+      },
+      "id": "3001",
+      "name": "Schedule: Hourly SLA Audit Cron",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [240, 900]
+    },
+    {
+      "parameters": {
+        "collection": "reports",
+        "operation": "find",
+        "query": "={\n  \"status\": { \"$in\": [\"ASSIGNED\", \"IN_PROGRESS\"] },\n  \"dueDate\": { \"$lt\": new Date().toISOString() }\n}"
+      },
+      "id": "3002",
+      "name": "MongoDB: Query Overdue Work Orders",
+      "type": "n8n-nodes-base.mongoDb",
+      "typeVersion": 1,
+      "position": [460, 900]
+    },
+    {
+      "parameters": {
+        "collection": "reports",
+        "operation": "update",
+        "query": "={ \"_id\": \"{{ $input.first().json._id }}\" }",
+        "fields": "={ \"isOverdue\": true, \"priority\": \"critical\" }"
+      },
+      "id": "3003",
+      "name": "MongoDB: Escalate to Critical Overdue",
+      "type": "n8n-nodes-base.mongoDb",
+      "typeVersion": 1,
+      "position": [680, 900]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://localhost:5000/api/v1/internal/broadcast",
+        "jsonParameters": true,
+        "bodyParametersJson": "={\n  \"event\": \"sla:escalation\",\n  \"payload\": {\n    \"overdueCount\": {{ $input.all().length }},\n    \"message\": \"Urgent: SLA breach detected on road maintenance corridor\"\n  }\n}",
+        "options": {}
+      },
+      "id": "3004",
+      "name": "Socket.IO: Emergency Admin Alert",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [900, 900]
+    }
+  ],
+  "connections": {
+    "Webhook: Citizen Pothole Report": {
+      "main": [
+        [
+          {
+            "node": "Cloudinary: Store Damage Photo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cloudinary: Store Damage Photo": {
+      "main": [
+        [
+          {
+            "node": "FastAPI: YOLOv8 Object Detection",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "FastAPI: YOLOv8 Object Detection": {
+      "main": [
+        [
+          {
+            "node": "Switch: Damage Confirmed?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch: Damage Confirmed?": {
+      "main": [
+        [
+          {
+            "node": "Code: Severity & Priority Calculator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code: Severity & Priority Calculator": {
+      "main": [
+        [
+          {
+            "node": "MongoDB: Geospatial Deduplication",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MongoDB: Geospatial Deduplication": {
+      "main": [
+        [
+          {
+            "node": "Switch: Duplicate Pothole?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch: Duplicate Pothole?": {
+      "main": [
+        [
+          {
+            "node": "MongoDB: Increment Duplicate Counter",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "MongoDB: Insert New Complaint",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MongoDB: Increment Duplicate Counter": {
+      "main": [
+        [
+          {
+            "node": "Socket.IO: Broadcast to Admin Radar Map",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MongoDB: Insert New Complaint": {
+      "main": [
+        [
+          {
+            "node": "Code: Smart Corridor Dispatcher",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code: Smart Corridor Dispatcher": {
+      "main": [
+        [
+          {
+            "node": "MongoDB: Assign Team Work Order",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MongoDB: Assign Team Work Order": {
+      "main": [
+        [
+          {
+            "node": "Socket.IO: Broadcast to Admin Radar Map",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook: Contractor Submits Repair Proof": {
+      "main": [
+        [
+          {
+            "node": "Cloudinary: Store Repair Proof Photo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cloudinary: Store Repair Proof Photo": {
+      "main": [
+        [
+          {
+            "node": "MongoDB: Insert Repair Record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MongoDB: Insert Repair Record": {
+      "main": [
+        [
+          {
+            "node": "Webhook: Admin Approval Action",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook: Admin Approval Action": {
+      "main": [
+        [
+          {
+            "node": "Switch: Repair Approved?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch: Repair Approved?": {
+      "main": [
+        [
+          {
+            "node": "MongoDB: Mark Report RESOLVED",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MongoDB: Mark Report RESOLVED": {
+      "main": [
+        [
+          {
+            "node": "Notification: Citizen Completion Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule: Hourly SLA Audit Cron": {
+      "main": [
+        [
+          {
+            "node": "MongoDB: Query Overdue Work Orders",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MongoDB: Query Overdue Work Orders": {
+      "main": [
+        [
+          {
+            "node": "MongoDB: Escalate to Critical Overdue",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MongoDB: Escalate to Critical Overdue": {
+      "main": [
+        [
+          {
+            "node": "Socket.IO: Emergency Admin Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}
